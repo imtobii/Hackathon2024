@@ -12,5 +12,5 @@ Dynamic Data Updates: Watch the data being plotted live as the system processes 
 User-Friendly Interface: Simple and intuitive interface built using Streamlit, allowing for easy file upload and real-time analysis.
 
 Technologies Used:
-Python: Main programming language for backend data processing and analysis.
+Python: Main programming language for backend data processing and analysis.    
 Streamlit: Framework for building the interactive web application.
