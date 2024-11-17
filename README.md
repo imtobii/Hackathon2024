@@ -1,5 +1,5 @@
 # Hackathon2024
-Coding challenge from EOG
+CODING CHALLENGE FROM EOG RESOURCES
 
 Keynotes: Before running please run proper library downloads for matplotlib and streamlit    
 
