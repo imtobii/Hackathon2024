@@ -24,6 +24,11 @@ if uploaded_file is not None:
     dataframe = pd.read_csv(uploaded_file)
     st.write(dataframe)
 
+col1, col2, col3, col4,col5,col6 = st.columns(6)
 
 
-st.page_link("C:\HACKUTD\data_page.py", label="Analyize")
+
+with col6:
+    
+
+    st.page_link("pages\data_page.py", label="Analyze")
