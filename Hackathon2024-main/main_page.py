@@ -33,6 +33,7 @@ uploaded_file = st.file_uploader("Choose a file")
 if uploaded_file is not None:
     # Save the uploaded file in session state
     st.session_state["uploaded_file"] = uploaded_file
+    st.session_state["data"] = pd.read_csv(uploaded_file)
     st.success("File uploaded successfully! Navigate to the Data Analysis Page to visualize the data.")
 else:
     custom_warning("Please upload a file to proceed.")
@@ -41,5 +42,5 @@ else:
 col1, col2, col3, col4,col5,col6 = st.columns(6)
 
 with col6:
-     st.page_link("pages\data_page.py", label=":grey-background[Analyze]")
+     st.page_link("pages/data_page.py", label=":grey-background[Analyze]")
 
