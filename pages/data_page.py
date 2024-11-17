@@ -1,32 +1,51 @@
 import streamlit as st
 import pandas as pd
 from io import StringIO
+import matplotlib.pyplot as plt
 
 st.markdown("<h2>Data Analysis Page</h2>", unsafe_allow_html=True)
 
+
+
 if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is not None:
-    try:
-        # Retrieve the uploaded file from session state
-        uploaded_file = st.session_state["uploaded_file"]
+    
+    uploaded_file = st.session_state["uploaded_file"]
 
-        # Convert the file to a DataFrame
-        string_data = StringIO(uploaded_file.getvalue().decode("utf-8"))
-        chart_data = pd.read_csv(string_data)
+    data = pd.read_csv(uploaded_file)
 
-        # Ensure the required columns exist
-        required_columns = ['Time', 'Inj Gas Valve Percent Open', 'Inj Gas Meter Volume Instantaneous', 'Inj Gas Meter Volume Setpoint']
-        if not all(column in chart_data.columns for column in required_columns):
-            st.error("Uploaded file does not contain the required columns.")
-        else:
-            # Display the line chart
-            st.line_chart(chart_data, x='Time', y=[
-                'Inj Gas Valve Percent Open',
-                'Inj Gas Meter Volume Instantaneous',
-                'Inj Gas Meter Volume Setpoint'
-                ],
-            color=["#43a700", "#a70000", "#04f"]
-            )
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+    # Step 1: Data Cleaning
+    # Convert 'Time' column to datetime format
+    data['Time'] = pd.to_datetime(data['Time'], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
+    # Drop rows with missing critical data
+    data_cleaned = data.dropna(subset=['Inj Gas Meter Volume Instantaneous', 'Inj Gas Valve Percent Open'])
+    # Interpolate missing Setpoint values
+    data_cleaned['Inj Gas Meter Volume Setpoint'] = data_cleaned['Inj Gas Meter Volume Setpoint'].interpolate()
+
+    # Step 2: Visualization of All Columns
+    st.write("Trend Analysis:")
+    # Center the chart in the middle of the app
+    with st.container():
+        fig, ax = plt.subplots(figsize=(12, 6))  # Adjusted size for compactness
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Instantaneous'], label='Instantaneous Volume', color='green')
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Setpoint'], label='Setpoint Volume', color='red', linestyle='dashed')
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Valve Percent Open'], label='Valve Percent Open (%)', color='blue')
+
+        ax.set_title("Gas Injection Trends")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Values")
+        ax.legend()
+        ax.grid()
+
+        st.pyplot(fig)
+
+    # Step 3: Load the data
+    
+    st.write("Uploaded Data:")
+    st.dataframe(data, width=800, height=500)
+
+    
+
+    
 else:
-    st.warning("No file uploaded. Please upload a file on the main page.")
+    st.warning("Please upload a file to proceed.")
+
