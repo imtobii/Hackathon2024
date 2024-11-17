@@ -6,25 +6,19 @@ import matplotlib.pyplot as plt
 st.markdown("<h2>Data Analysis Page</h2>", unsafe_allow_html=True)
 
 
+# Use the data from session state if available
+if "data" in st.session_state:
+    data = st.session_state["data"]
 
-if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is not None:
-    
-    uploaded_file = st.session_state["uploaded_file"]
-    data = pd.read_csv(uploaded_file)
-
-    # Step 1: Data Cleaning
-    # Convert 'Time' column to datetime format
+    # Step 2: Data Cleaning
     data['Time'] = pd.to_datetime(data['Time'], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
-    # Drop rows with missing critical data
     data_cleaned = data.dropna(subset=['Inj Gas Meter Volume Instantaneous', 'Inj Gas Valve Percent Open'])
-    # Interpolate missing Setpoint values
     data_cleaned['Inj Gas Meter Volume Setpoint'] = data_cleaned['Inj Gas Meter Volume Setpoint'].interpolate()
 
-    # Step 2: Visualization of All Columns
+    # Step 3: Visualization of All Columns
     st.write("Trend Analysis:")
-    # Center the chart in the middle of the app
     with st.container():
-        fig, ax = plt.subplots(figsize=(12, 6))  # Adjusted size for compactness
+        fig, ax = plt.subplots(figsize=(12, 6))
         ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Instantaneous'], label='Instantaneous Volume', color='green')
         ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Setpoint'], label='Setpoint Volume', color='red', linestyle='dashed')
         ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Valve Percent Open'], label='Valve Percent Open (%)', color='blue')
@@ -37,17 +31,12 @@ if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is 
 
         st.pyplot(fig)
 
-    # Step 3: Load the data
-    
+    # Step 4: Display Uploaded Data
     st.write("Uploaded Data:")
-    
     st.dataframe(data, width=800, height=500)
 
-    # Read the uploaded file
-    
+    # Step 5: Process Warnings
     st.success("Warning(s) Log")
-    
-    # Process the file and detect hydrate warnings
     warnings = []
     pipeOpen = True
     ignore = False
@@ -72,7 +61,7 @@ if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is 
                 if volume == 0 and pipeOpen:
                     warning_msg = f"Hydrate formation detected on {data.iloc[index]['Time']}"
                     warnings.append(warning_msg)
-                    st.toast(warning_msg, icon="⚠️")  # Display as a notification
+                    st.toast(warning_msg, icon="⚠️")
                     st.error(warning_msg, icon="🚨")
                     pipeOpen = False
 
@@ -82,7 +71,5 @@ if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is 
         previousVolume = volume
         previousValve = valve
 
-    
 else:
     st.warning("Please upload a file to proceed.")
-
