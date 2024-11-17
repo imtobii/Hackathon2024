@@ -1,32 +1,56 @@
 import streamlit as st
 import pandas as pd
 from io import StringIO
+import matplotlib.pyplot as plt
 
 st.markdown("<h2>Data Analysis Page</h2>", unsafe_allow_html=True)
 
 if "uploaded_file" in st.session_state and st.session_state["uploaded_file"] is not None:
-    try:
-        # Retrieve the uploaded file from session state
-        uploaded_file = st.session_state["uploaded_file"]
+    
+    uploaded_file = st.session_state["uploaded_file"]
 
-        # Convert the file to a DataFrame
-        string_data = StringIO(uploaded_file.getvalue().decode("utf-8"))
-        chart_data = pd.read_csv(string_data)
+    # Step 1: Load the data
+    data = pd.read_csv(uploaded_file)
+    st.write("Preview of Uploaded Data:")
+    # Resize the table to be compact
+    st.dataframe(data.head(10), width=800, height=300)  # Limit rows and adjust dimensions
 
-        # Ensure the required columns exist
-        required_columns = ['Time', 'Inj Gas Valve Percent Open', 'Inj Gas Meter Volume Instantaneous', 'Inj Gas Meter Volume Setpoint']
-        if not all(column in chart_data.columns for column in required_columns):
-            st.error("Uploaded file does not contain the required columns.")
-        else:
-            # Display the line chart
-            st.line_chart(chart_data, x='Time', y=[
-                'Inj Gas Valve Percent Open',
-                'Inj Gas Meter Volume Instantaneous',
-                'Inj Gas Meter Volume Setpoint'
-                ],
-            color=["#43a700", "#a70000", "#04f"]
-            )
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+    # Step 2: Data Cleaning
+    # Convert 'Time' column to datetime format
+    data['Time'] = pd.to_datetime(data['Time'], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
+    # Drop rows with missing critical data
+    data_cleaned = data.dropna(subset=['Inj Gas Meter Volume Instantaneous', 'Inj Gas Valve Percent Open'])
+    # Interpolate missing Setpoint values
+    data_cleaned['Inj Gas Meter Volume Setpoint'] = data_cleaned['Inj Gas Meter Volume Setpoint'].interpolate()
+
+    # Step 3: Visualization of All Columns
+    st.write("Trend Analysis:")
+    # Center the chart in the middle of the app
+    with st.container():
+        fig, ax = plt.subplots(figsize=(12, 6))  # Adjusted size for compactness
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Instantaneous'], label='Instantaneous Volume', color='green')
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Meter Volume Setpoint'], label='Setpoint Volume', color='red', linestyle='dashed')
+        ax.plot(data_cleaned['Time'], data_cleaned['Inj Gas Valve Percent Open'], label='Valve Percent Open (%)', color='blue')
+
+        ax.set_title("Gas Injection Trends")
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Values")
+        ax.legend()
+        ax.grid()
+
+        st.pyplot(fig)
+
+    # Step 4: Hydrate Detection Logic
+    threshold = -50  # Example threshold for volume drop
+    duration = 10    # Number of consecutive points to consider a sustained decline
+    data_cleaned['Volume_Change'] = data_cleaned['Inj Gas Meter Volume Instantaneous'].diff()
+    hydrate_risk = (data_cleaned['Volume_Change'] < threshold).rolling(window=duration).sum() >= duration
+
+    if hydrate_risk.any():
+        st.error("ALERT: Potential hydrate formation detected! Check the system immediately.")
+    else:
+        st.success("System stable: No hydrate risks detected.")
 else:
-    st.warning("No file uploaded. Please upload a file on the main page.")
+    st.warning("Please upload a file to proceed.")
+
+col1, col2, col3, col4, col5, col6 = st.columns(6)
