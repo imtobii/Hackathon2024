@@ -23,3 +23,12 @@ if uploaded_file is not None:
     # Can be used wherever a "file-like" object is accepted:
     dataframe = pd.read_csv(uploaded_file)
     st.write(dataframe)
+
+col1, col2, col3, col4,col5,col6 = st.columns(6)
+
+
+
+with col6:
+    
+
+    st.page_link("pages\data_page.py", label="Analyze")
